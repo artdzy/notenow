@@ -44,19 +44,27 @@ final class FlipViewController: UIViewController, UIPageViewControllerDataSource
         base.layer.shadowOpacity = 0.14
         base.layer.shadowRadius = 20
         base.layer.shadowOffset = CGSize(width: 0, height: 14)
+        // Kâğıt kenarları ve gölge hiç değişmez: bir kez çizilsin, kalem yazarken her karede yeniden hesaplanmasın.
+        for v in [base, edge1, edge2] {
+            v.layer.shouldRasterize = true
+            v.layer.rasterizationScale = UIScreen.main.scale
+        }
 
         pvc.isDoubleSided = false
         pvc.dataSource = self
         pvc.delegate = self
         addChild(pvc)
         view.addSubview(pvc.view)
-        pvc.view.layer.cornerRadius = 4
-        pvc.view.clipsToBounds = true
+        // Köşe yuvarlatma maskesi yok: maske, PencilKit'in mürekkebi her karede ekran dışında
+        // birleştirmesine yol açıp kalemde gecikme hissi yaratıyordu.
+        pvc.view.clipsToBounds = false
         pvc.didMove(toParent: self)
 
         // Sayfa çevirme yalnızca parmakla; kalem dokunuşları mürekkep içindir.
+        // Tek parmak çevirir; iki parmak yakınlaştırmaya kalsın.
         for g in pvc.gestureRecognizers {
             g.allowedTouchTypes = [NSNumber(value: UITouch.TouchType.direct.rawValue)]
+            (g as? UIPanGestureRecognizer)?.maximumNumberOfTouches = 1
         }
 
         let start = min(max(0, model.currentIndex), doc.pages.count - 1)
@@ -94,7 +102,17 @@ final class FlipViewController: UIViewController, UIPageViewControllerDataSource
     }
 
     private func makePage(_ index: Int) -> PageViewController {
-        PageViewController(pageID: doc.pages[index].id, doc: doc, model: model)
+        let page = PageViewController(pageID: doc.pages[index].id, doc: doc, model: model)
+        page.onZoomChange = { [weak self, weak page] zoomed in
+            guard let self, let page, page === self.currentPage else { return }
+            self.setCurlEnabled(!zoomed)
+        }
+        return page
+    }
+
+    /// Sayfa yakınlaştırılmışken parmak sayfayı kaydırır, çevirmez.
+    private func setCurlEnabled(_ on: Bool) {
+        for g in pvc.gestureRecognizers { g.isEnabled = on }
     }
 
     private var currentIndex: Int? {
@@ -106,6 +124,7 @@ final class FlipViewController: UIViewController, UIPageViewControllerDataSource
     private func show(_ index: Int, direction: UIPageViewController.NavigationDirection, animated: Bool) {
         guard doc.pages.indices.contains(index) else { return }
         currentPage?.deselect()
+        setCurlEnabled(true)
         isTurning = animated
         pvc.setViewControllers([makePage(index)], direction: direction, animated: animated) { [weak self] _ in
             self?.isTurning = false
@@ -169,6 +188,7 @@ final class FlipViewController: UIViewController, UIPageViewControllerDataSource
     func pageViewController(_ p: UIPageViewController, didFinishAnimating finished: Bool,
                             previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
         guard completed, let i = currentIndex else { return }
+        setCurlEnabled(!(currentPage?.isZoomed ?? false))
         model.currentIndex = i
         doc.setLastPage(i)
     }

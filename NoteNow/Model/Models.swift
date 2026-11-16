@@ -14,7 +14,7 @@ enum PaperType: String, Codable, CaseIterable, Identifiable {
 }
 
 enum PageOrientation: String, Codable, CaseIterable, Identifiable {
-    case landscape, portrait
+    case portrait, landscape
     var id: String { rawValue }
     var title: String { self == .landscape ? "Yatay" : "Dikey" }
     /// Sayfanın mantıksal boyutu (nokta). Ekrana sığacak şekilde ölçeklenir.

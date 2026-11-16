@@ -6,7 +6,7 @@ struct NewNotebookSheet: View {
     @State private var title = ""
     @State private var cover: CoverColor = .navy
     @State private var paper: PaperType = .lined
-    @State private var orientation: PageOrientation = .landscape
+    @State private var orientation: PageOrientation = .portrait
     @FocusState private var titleFocused: Bool
 
     var body: some View {

@@ -14,7 +14,7 @@ final class NotebookStore: ObservableObject {
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         load()
         if notebooks.isEmpty && !FileManager.default.fileExists(atPath: libraryURL.path) {
-            create(title: "İlk defterim", cover: .navy, paper: .lined, orientation: .landscape)
+            create(title: "İlk defterim", cover: .navy, paper: .lined, orientation: .portrait)
         }
     }
 
@@ -28,9 +28,16 @@ final class NotebookStore: ObservableObject {
         notebooks = list.sorted { $0.modified > $1.modified }
     }
 
+    private let io = DispatchQueue(label: "notenow.library", qos: .utility)
+
+    /// Kitaplık dosyası arka planda yazılır; yazarken ana iş parçacığı (ve kalem) beklemez.
     private func persist() {
-        guard let data = try? JSONEncoder().encode(notebooks) else { return }
-        try? data.write(to: libraryURL, options: .atomic)
+        let snapshot = notebooks
+        let url = libraryURL
+        io.async {
+            guard let data = try? JSONEncoder().encode(snapshot) else { return }
+            try? data.write(to: url, options: .atomic)
+        }
     }
 
     @discardableResult
@@ -70,6 +77,12 @@ final class NotebookStore: ObservableObject {
     func setCover(_ nb: Notebook, _ cover: CoverColor) {
         var copy = nb
         copy.cover = cover
+        update(copy)
+    }
+
+    func setOrientation(_ nb: Notebook, _ o: PageOrientation) {
+        var copy = nb
+        copy.orientation = o
         update(copy)
     }
 

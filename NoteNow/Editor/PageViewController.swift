@@ -11,7 +11,8 @@ final class NoteCanvasView: PKCanvasView {
 /// Tek bir sayfa: kâğıt, görseller ve en üstte PencilKit tuvali.
 ///
 /// Kalem her zaman mürekkep çizer. Parmak ise görselleri taşır, büyütür, döndürür;
-/// görselin dışında parmakla kaydırmak sayfayı çevirir.
+/// görselin dışında iki parmakla sıkıştırmak sayfayı yakınlaştırır, tek parmakla
+/// kaydırmak sayfayı çevirir (yakınlaştırılmışken sayfayı kaydırır).
 final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestureRecognizerDelegate, UIDropInteractionDelegate {
     let pageID: UUID
     private let doc: NotebookDocument
@@ -27,7 +28,13 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
     private(set) var selectedID: UUID?
     private var interacting = Set<UUID>()
     private var bag = Set<AnyCancellable>()
-    private var scale: CGFloat = 1
+    private var fitScale: CGFloat = 1
+    private var laidOutSize = CGSize.zero
+    private var wasZoomed = false
+
+    /// Yakınlaştırma durumu değişince (sayfa çevirmeyi kapatıp açmak için).
+    var onZoomChange: ((Bool) -> Void)?
+    var isZoomed: Bool { canvas.zoomScale > fitScale * 1.02 }
 
     private let pan = UIPanGestureRecognizer()
     private let pinch = UIPinchGestureRecognizer()
@@ -76,8 +83,10 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
         canvas.showsVerticalScrollIndicator = false
         canvas.showsHorizontalScrollIndicator = false
         canvas.contentInsetAdjustmentBehavior = .never
-        canvas.bouncesZoom = false
-        canvas.pinchGestureRecognizer?.isEnabled = false
+        canvas.bouncesZoom = true
+        canvas.alwaysBounceVertical = false
+        canvas.alwaysBounceHorizontal = false
+        canvas.decelerationRate = .normal
         canvas.overrideUserInterfaceStyle = .light
         canvas.drawing = doc.drawing(for: pageID)
         canvas.delegate = self
@@ -101,6 +110,10 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
             view.addGestureRecognizer(g)
         }
 
+        // Görselin üstündeki hareketler önce gelir; değilse tuval yakınlaştırır / kaydırır.
+        canvas.pinchGestureRecognizer?.require(toFail: pinch)
+        canvas.panGestureRecognizer.require(toFail: pan)
+
         view.addInteraction(UIDropInteraction(delegate: self))
 
         doc.$pages
@@ -118,19 +131,69 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        guard view.bounds.width > 0 else { return }
+        guard view.bounds.width > 0, view.bounds.size != laidOutSize else { return }
+        laidOutSize = view.bounds.size
         let size = doc.pageSize
-        scale = view.bounds.width / size.width
-        pageLayer.transform = CGAffineTransform(scaleX: scale, y: scale)
-        pageLayer.center = CGPoint(x: view.bounds.midX, y: view.bounds.midY)
+        fitScale = view.bounds.width / size.width
 
+        // Sayfa tam sığar; iki parmakla 5 katına kadar yakınlaşır.
         canvas.frame = view.bounds
-        canvas.minimumZoomScale = scale
-        canvas.maximumZoomScale = scale
-        canvas.zoomScale = scale
-        canvas.contentSize = view.bounds.size
+        canvas.minimumZoomScale = fitScale
+        canvas.maximumZoomScale = fitScale * 5
+        canvas.zoomScale = fitScale
+        updateContentSize()
         canvas.contentOffset = .zero
+        syncPageLayer()
+        updateZoomState()
         positionMenu()
+    }
+
+    private func updateContentSize() {
+        let z = canvas.zoomScale
+        let size = doc.pageSize
+        canvas.contentSize = CGSize(width: size.width * z, height: size.height * z)
+    }
+
+    /// Kâğıt ve görseller tuvalle birlikte yakınlaşıp kayar.
+    private func syncPageLayer() {
+        let z = canvas.zoomScale
+        let size = doc.pageSize
+        let o = canvas.contentOffset
+        pageLayer.transform = CGAffineTransform(scaleX: z, y: z)
+        pageLayer.center = CGPoint(x: size.width * z / 2 - o.x, y: size.height * z / 2 - o.y)
+    }
+
+    private func updateZoomState() {
+        let zoomed = isZoomed
+        canvas.isScrollEnabled = zoomed
+        guard zoomed != wasZoomed else { return }
+        wasZoomed = zoomed
+        onZoomChange?(zoomed)
+    }
+
+    func resetZoom(animated: Bool) {
+        canvas.setZoomScale(fitScale, animated: animated)
+    }
+
+    // MARK: Yakınlaştırma
+
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
+        updateContentSize()
+        syncPageLayer()
+        positionMenu()
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        syncPageLayer()
+        positionMenu()
+    }
+
+    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+        if scale < fitScale * 1.02 {
+            canvas.setZoomScale(fitScale, animated: true)
+            canvas.setContentOffset(.zero, animated: true)
+        }
+        updateZoomState()
     }
 
     private func applyTool() {
@@ -177,7 +240,8 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
     }
 
     func addImage(_ img: UIImage, atViewPoint vp: CGPoint? = nil) {
-        let p = vp.map { view.convert($0, to: imagesLayer) }
+        let anchor = vp ?? (isZoomed ? CGPoint(x: view.bounds.midX, y: view.bounds.midY) : nil)
+        let p = anchor.map { view.convert($0, to: imagesLayer) }
         guard let item = doc.addImage(img, to: pageID, at: p) else { return }
         syncImages()
         select(item.id)
@@ -311,7 +375,7 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
     @objc private func handlePinch(_ g: UIPinchGestureRecognizer) {
         switch g.state {
         case .began:
-            guard let id = selectedID ?? imageID(at: g.location(in: imagesLayer)), let iv = imageViews[id] else { return }
+            guard let id = imageID(at: g.location(in: imagesLayer)), let iv = imageViews[id] else { return }
             select(id)
             pinchID = id
             pinchStartSize = iv.item.size
@@ -331,7 +395,7 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
     @objc private func handleRotate(_ g: UIRotationGestureRecognizer) {
         switch g.state {
         case .began:
-            guard let id = selectedID ?? imageID(at: g.location(in: imagesLayer)), let iv = imageViews[id] else { return }
+            guard let id = imageID(at: g.location(in: imagesLayer)), let iv = imageViews[id] else { return }
             rotateID = id
             rotateStart = iv.item.rotation
             interacting.insert(id)
@@ -354,7 +418,7 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
         let p = g.location(in: imagesLayer)
         if g === tap { return imageID(at: p) != nil || selectedID != nil }
         if g === pan { return handleHit(g.location(in: view)) != nil || imageID(at: p) != nil }
-        if g === pinch || g === rotate { return selectedID != nil || imageID(at: p) != nil }
+        if g === pinch || g === rotate { return imageID(at: p) != nil }
         return true
     }
 

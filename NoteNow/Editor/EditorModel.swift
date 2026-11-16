@@ -89,8 +89,8 @@ final class EditorModel: ObservableObject {
     static func strokeWidth(_ t: ToolKind, _ w: WidthPreset) -> CGFloat {
         switch t {
         case .fountain: return [2.6, 4.2, 7][w.rawValue]
-        case .pencil: return [2.2, 4, 8][w.rawValue]
-        case .felt: return [2, 3.6, 6.5][w.rawValue]
+        case .pencil: return [3.2, 5.5, 9][w.rawValue]   // PencilKit: 2.4…16
+        case .felt: return [1.8, 2.8, 4][w.rawValue]   // monoline: 0.5…4
         case .highlighter: return [14, 24, 36][w.rawValue]
         case .eraser: return [8, 20, 44][w.rawValue]
         }

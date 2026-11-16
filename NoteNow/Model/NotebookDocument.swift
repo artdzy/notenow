@@ -4,7 +4,8 @@ import UIKit
 /// Açık bir defter: sayfalar, mürekkep çizimleri ve görseller.
 /// Diskte: <defter>/pages.json, <sayfa-id>.drawing, images/<dosya>
 final class NotebookDocument: ObservableObject {
-    @Published private(set) var notebook: Notebook
+    /// Yayınlanmaz: her kayıtta değişen tarih yüzünden ekranın yeniden çizilmesini istemeyiz.
+    private(set) var notebook: Notebook
     @Published private(set) var pages: [PageMeta] = []
 
     let folder: URL
