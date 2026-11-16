@@ -88,7 +88,15 @@ final class NotebookStore: ObservableObject {
         for src in items where (try? src.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
             let dest = cloudRoot.appendingPathComponent(src.lastPathComponent, isDirectory: true)
             if fm.fileExists(atPath: dest.path) { continue }
-            try? fm.setUbiquitous(true, itemAt: src, destinationURL: dest)
+            do {
+                try fm.setUbiquitous(true, itemAt: src, destinationURL: dest)
+            } catch {
+                // Taşınamadıysa kopyala; yerel asıl, kopya kesinleşene kadar yerinde kalır.
+                var err: NSError?
+                NSFileCoordinator().coordinate(writingItemAt: dest, options: .forReplacing, error: &err) { u in
+                    if (try? fm.copyItem(at: src, to: u)) != nil { try? fm.removeItem(at: src) }
+                }
+            }
         }
     }
 
