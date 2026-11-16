@@ -34,7 +34,10 @@ final class EditorModel: ObservableObject {
     @Published var highlightColor: UInt32 = Palette.highlight[0].hex
     @Published var widths: [ToolKind: WidthPreset] = [:]
     @Published var eraserMode: EraserMode = .partial
+    /// Kalemin yazdığı (etkin) sayfa.
     @Published var currentIndex: Int
+    /// Ekranda görünen sayfalar: dikeyde bir, yatay açık defterde iki.
+    @Published var visibleIndices: [Int]
     /// Ayar penceresi açık olan kalem.
     @Published var settingsFor: ToolKind?
 
@@ -43,6 +46,7 @@ final class EditorModel: ObservableObject {
 
     init(startIndex: Int) {
         currentIndex = startIndex
+        visibleIndices = [startIndex]
     }
 
     func select(_ t: ToolKind) {

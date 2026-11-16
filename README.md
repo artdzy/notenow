@@ -43,6 +43,7 @@ Note apps on the App Store are either paid or crowded with tools. NoteNow is the
 | --- | --- |
 | **Five pens** | Fountain pen, pencil, felt tip, highlighter and eraser, standing in a tray. The active pen lifts out. Tap it again for three widths and eight colours; the highlighter has its own four. The eraser removes part of a stroke or the whole line. |
 | **Real page turns** | Pages are a `UIPageViewController` with the `pageCurl` style: grab the edge with a finger and the sheet curls over like paper. The ‹ › buttons turn it too, and **+** on the last page starts a new one. |
+| **Notepad or open book** | Hold the iPad upright and a portrait notebook is a single page, like a notepad. Turn it sideways and it opens into a two-page spread, curling a whole leaf at a time. |
 | **Paste, then write** | Paste a screenshot, pick from Photos or drag an image in from another app. Move it with one finger, pinch to resize, twist to rotate (it snaps to straight angles), or pull a corner handle. A small menu brings it to front, copies or deletes it. Ink always sits on top, so you can circle and annotate right away. |
 | **Four papers** | Ruled, grid, dotted or blank, per page. Notebooks are portrait by default, like a notepad; landscape is one tap away. |
 | **Library** | Cloth-bound covers in six colours. Long-press to rename, recolour or delete. |

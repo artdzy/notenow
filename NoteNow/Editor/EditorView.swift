@@ -94,9 +94,9 @@ struct EditorView: View {
 
             HStack(spacing: 2) {
                 navButton("chevron.left", "Önceki sayfa") { model.flipper?.turn(by: -1) }
-                    .opacity(model.currentIndex > 0 ? 1 : 0.3)
+                    .opacity((model.visibleIndices.first ?? 0) > 0 ? 1 : 0.3)
                 Button { showPages = true } label: {
-                    Text("\(model.currentIndex + 1) / \(doc.pages.count)")
+                    Text("\(pageLabel) / \(doc.pages.count)")
                         .font(Theme.serif(19))
                         .foregroundStyle(Theme.text)
                         .monospacedDigit()
@@ -105,7 +105,7 @@ struct EditorView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Sayfalar")
-                if model.currentIndex >= doc.pages.count - 1 {
+                if (model.visibleIndices.last ?? model.currentIndex) >= doc.pages.count - 1 {
                     navButton("plus", "Yeni sayfa") { model.flipper?.addPageAfterCurrent() }
                 } else {
                     navButton("chevron.right", "Sonraki sayfa") { model.flipper?.turn(by: 1) }
@@ -113,6 +113,14 @@ struct EditorView: View {
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
+    }
+
+    /// Tek sayfada "3", açık defterde "3–4".
+    private var pageLabel: String {
+        let v = model.visibleIndices
+        guard let a = v.first else { return "\(model.currentIndex + 1)" }
+        if let b = v.last, b != a { return "\(a + 1)–\(b + 1)" }
+        return "\(a + 1)"
     }
 
     private func navButton(_ icon: String, _ label: String, action: @escaping () -> Void) -> some View {

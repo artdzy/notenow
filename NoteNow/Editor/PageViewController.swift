@@ -34,6 +34,8 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
 
     /// Yakınlaştırma durumu değişince (sayfa çevirmeyi kapatıp açmak için).
     var onZoomChange: ((Bool) -> Void)?
+    /// Açık defterde kalemin ya da parmağın dokunduğu sayfa etkin olur.
+    var onActivate: (() -> Void)?
     var isZoomed: Bool { canvas.zoomScale > fitScale * 1.02 }
 
     private let pan = UIPanGestureRecognizer()
@@ -208,6 +210,7 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
 
     func canvasViewDidBeginUsingTool(_ canvasView: PKCanvasView) {
         deselect()
+        onActivate?()
     }
 
     // MARK: Görseller
@@ -328,6 +331,7 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
 
     @objc private func handleTap(_ g: UITapGestureRecognizer) {
         if let id = imageID(at: g.location(in: imagesLayer)) {
+            onActivate?()
             select(id)
         } else {
             deselect()
@@ -416,6 +420,7 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
 
     func gestureRecognizerShouldBegin(_ g: UIGestureRecognizer) -> Bool {
         let p = g.location(in: imagesLayer)
+        if g === pan || g === pinch, imageID(at: p) != nil { onActivate?() }
         if g === tap { return imageID(at: p) != nil || selectedID != nil }
         if g === pan { return handleHit(g.location(in: view)) != nil || imageID(at: p) != nil }
         if g === pinch || g === rotate { return imageID(at: p) != nil }
