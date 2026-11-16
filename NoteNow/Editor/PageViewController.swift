@@ -65,7 +65,7 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = Theme.paperUI
+        view.backgroundColor = doc.notebook.tint.paperUI
         view.clipsToBounds = true
 
         let size = doc.pageSize
@@ -218,6 +218,7 @@ final class PageViewController: UIViewController, PKCanvasViewDelegate, UIGestur
     private func syncImages() {
         guard let page = doc.page(id: pageID) else { return }
         paperView.paper = page.paper
+        paperView.color = doc.notebook.tint
         var seen = Set<UUID>()
         for item in page.images {
             seen.insert(item.id)

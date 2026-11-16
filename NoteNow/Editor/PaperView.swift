@@ -4,19 +4,19 @@ enum PaperRenderer {
     static let lineSpacing: CGFloat = 50
     static let gridSpacing: CGFloat = 40
 
-    static func draw(_ paper: PaperType, size: CGSize, in ctx: CGContext) {
-        ctx.setFillColor(Theme.paperUI.cgColor)
+    static func draw(_ paper: PaperType, color: PaperColor = .cream, size: CGSize, in ctx: CGContext) {
+        ctx.setFillColor(color.paperUI.cgColor)
         ctx.fill(CGRect(origin: .zero, size: size))
         switch paper {
         case .lined:
-            ctx.setFillColor(Theme.ruleUI.cgColor)
+            ctx.setFillColor(UIColor(hex: color.ruleHex).cgColor)
             var y = lineSpacing * 2
             while y < size.height - 10 {
                 ctx.fill(CGRect(x: 0, y: y, width: size.width, height: 1.5))
                 y += lineSpacing
             }
         case .grid:
-            ctx.setFillColor(Theme.gridUI.cgColor)
+            ctx.setFillColor(UIColor(hex: color.gridHex).cgColor)
             var y: CGFloat = gridSpacing
             while y < size.height {
                 ctx.fill(CGRect(x: 0, y: y, width: size.width, height: 1.2))
@@ -28,7 +28,7 @@ enum PaperRenderer {
                 x += gridSpacing
             }
         case .dots:
-            ctx.setFillColor(Theme.dotUI.cgColor)
+            ctx.setFillColor(UIColor(hex: color.dotHex).cgColor)
             var y: CGFloat = gridSpacing
             while y < size.height {
                 var x: CGFloat = gridSpacing
@@ -48,6 +48,9 @@ final class PaperView: UIView {
     var paper: PaperType = .lined {
         didSet { if oldValue != paper { setNeedsDisplay() } }
     }
+    var color: PaperColor = .cream {
+        didSet { if oldValue != color { setNeedsDisplay() } }
+    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -59,6 +62,6 @@ final class PaperView: UIView {
 
     override func draw(_ rect: CGRect) {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
-        PaperRenderer.draw(paper, size: bounds.size, in: ctx)
+        PaperRenderer.draw(paper, color: color, size: bounds.size, in: ctx)
     }
 }

@@ -1,12 +1,12 @@
 import SwiftUI
 
 struct NewNotebookSheet: View {
-    var onCreate: (String, CoverColor, PaperType, PageOrientation) -> Void
+    var onCreate: (String, CoverColor, PaperType, PaperColor) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var title = ""
     @State private var cover: CoverColor = .navy
     @State private var paper: PaperType = .lined
-    @State private var orientation: PageOrientation = .portrait
+    @State private var color: PaperColor = .cream
     @FocusState private var titleFocused: Bool
 
     var body: some View {
@@ -17,7 +17,7 @@ struct NewNotebookSheet: View {
                 Spacer()
                 Text("Yeni defter").font(Theme.serif(26)).foregroundStyle(Theme.text)
                 Spacer()
-                Button("Oluştur") { onCreate(title, cover, paper, orientation) }
+                Button("Oluştur") { onCreate(title, cover, paper, color) }
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Theme.ink)
             }
@@ -57,7 +57,29 @@ struct NewNotebookSheet: View {
             section("KÂĞIT") {
                 HStack(spacing: 12) {
                     ForEach(PaperType.allCases) { p in
-                        PaperChoice(paper: p, selected: paper == p) { paper = p }
+                        PaperChoice(paper: p, color: color, selected: paper == p) { paper = p }
+                    }
+                }
+            }
+
+            section("KÂĞIT RENGİ") {
+                HStack(spacing: 14) {
+                    ForEach(PaperColor.allCases) { c in
+                        Button { color = c } label: {
+                            VStack(spacing: 6) {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(c.color)
+                                    .frame(width: 52, height: 64)
+                                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(color == c ? Theme.ink : Theme.hairline, lineWidth: color == c ? 2 : 1))
+                                    .shadow(color: .black.opacity(0.06), radius: 3, y: 2)
+                                Text(c.title).font(.system(size: 12, weight: color == c ? .semibold : .regular))
+                                    .foregroundStyle(color == c ? Theme.text : Theme.muted)
+                            }
+                            .frame(minWidth: 56, minHeight: 44)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(c.title) kâğıt")
+                        .accessibilityAddTraits(color == c ? .isSelected : [])
                     }
                 }
             }
@@ -78,13 +100,14 @@ struct NewNotebookSheet: View {
 
 struct PaperChoice: View {
     let paper: PaperType
+    var color: PaperColor = .cream
     let selected: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 8) {
-                PaperSwatch(paper: paper)
+                PaperSwatch(paper: paper, color: color)
                     .frame(height: 60)
                     .clipShape(RoundedRectangle(cornerRadius: 4))
                 Text(paper.title).font(.system(size: 13, weight: .medium)).foregroundStyle(Theme.text)
@@ -101,10 +124,11 @@ struct PaperChoice: View {
 /// Kâğıt dokusunun küçük önizlemesi.
 struct PaperSwatch: View {
     let paper: PaperType
+    var color: PaperColor = .cream
     var body: some View {
         Canvas { ctx, size in
-            ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Theme.card))
-            let rule = Color(hex: 0xE3DCCB)
+            ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(color.color))
+            let rule = Color(hex: color.ruleHex)
             switch paper {
             case .lined:
                 var y: CGFloat = 12
@@ -118,7 +142,7 @@ struct PaperSwatch: View {
                 var y: CGFloat = 6
                 while y < size.height {
                     var x: CGFloat = 6
-                    while x < size.width { ctx.fill(Path(ellipseIn: CGRect(x: x - 1, y: y - 1, width: 2, height: 2)), with: .color(Color(hex: 0xC9C0AD))); x += 12 }
+                    while x < size.width { ctx.fill(Path(ellipseIn: CGRect(x: x - 1, y: y - 1, width: 2, height: 2)), with: .color(Color(hex: color.dotHex))); x += 12 }
                     y += 12
                 }
             case .blank:

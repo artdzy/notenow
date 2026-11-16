@@ -103,6 +103,7 @@ final class NotebookDocument: ObservableObject {
             w.cancel()
         }
         io.sync {}
+        if !works.isEmpty { SearchIndex.shared.schedule(folder: folder, delay: 0.3) }
     }
 
     // MARK: Sayfalar
@@ -122,6 +123,7 @@ final class NotebookDocument: ObservableObject {
         notebook.modified = Date()
         notebook.pageCount = pages.count
         store?.update(notebook)
+        SearchIndex.shared.schedule(folder: folder)
     }
 
     func setLastPage(_ i: Int) {
@@ -235,7 +237,7 @@ final class NotebookDocument: ObservableObject {
         return renderer.image { rc in
             let ctx = rc.cgContext
             ctx.scaleBy(x: s, y: s)
-            PaperRenderer.draw(page.paper, size: size, in: ctx)
+            PaperRenderer.draw(page.paper, color: notebook.tint, size: size, in: ctx)
             for item in page.images {
                 guard let img = image(item.fileName) else { continue }
                 ctx.saveGState()

@@ -14,8 +14,10 @@ final class NotebookStore: ObservableObject {
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         load()
         if notebooks.isEmpty && !FileManager.default.fileExists(atPath: libraryURL.path) {
-            create(title: "İlk defterim", cover: .navy, paper: .lined, orientation: .portrait)
+            create(title: "İlk defterim", cover: .navy, paper: .lined, color: .cream)
         }
+        // Henüz okunmamış el yazılarını arka planda metne çevir.
+        SearchIndex.shared.reindexAll(notebooks.map { folder(for: $0.id) })
     }
 
     func folder(for id: UUID) -> URL {
@@ -41,12 +43,13 @@ final class NotebookStore: ObservableObject {
     }
 
     @discardableResult
-    func create(title: String, cover: CoverColor, paper: PaperType, orientation: PageOrientation) -> Notebook {
+    func create(title: String, cover: CoverColor, paper: PaperType, color: PaperColor) -> Notebook {
         let now = Date()
         let clean = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let nb = Notebook(
             id: UUID(), title: clean.isEmpty ? "Adsız defter" : clean, cover: cover, paper: paper,
-            orientation: orientation, created: now, modified: now, pageCount: 1, lastPage: 0
+            orientation: .portrait, created: now, modified: now, pageCount: 1, lastPage: 0,
+            paperColor: color
         )
         let dir = folder(for: nb.id)
         try? FileManager.default.createDirectory(at: dir.appendingPathComponent("images"), withIntermediateDirectories: true)
@@ -77,6 +80,24 @@ final class NotebookStore: ObservableObject {
     func setCover(_ nb: Notebook, _ cover: CoverColor) {
         var copy = nb
         copy.cover = cover
+        update(copy)
+    }
+
+    func search(_ query: String) -> [SearchHit] {
+        SearchIndex.shared.search(query, in: notebooks, folder: folder(for:))
+    }
+
+    /// Arama sonucundan: defteri o sayfada aç.
+    func notebook(_ nb: Notebook, openingAt page: Int) -> Notebook {
+        var copy = nb
+        copy.lastPage = page
+        update(copy)
+        return copy
+    }
+
+    func setPaperColor(_ nb: Notebook, _ c: PaperColor) {
+        var copy = nb
+        copy.paperColor = c
         update(copy)
     }
 

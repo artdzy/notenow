@@ -47,7 +47,7 @@ final class FlipViewController: UIViewController, UIPageViewControllerDataSource
         super.viewDidLoad()
         view.backgroundColor = .clear
 
-        for (v, c) in [(edge2, Theme.paperEdgeUI), (edge1, Theme.paperEdge2UI), (base, Theme.paperUI)] {
+        for (v, c) in [(edge2, Theme.paperEdgeUI), (edge1, Theme.paperEdge2UI), (base, doc.notebook.tint.paperUI)] {
             v.backgroundColor = c
             v.layer.cornerRadius = 4
             v.layer.shadowColor = UIColor(hex: 0x3C321E).cgColor
@@ -169,6 +169,7 @@ final class FlipViewController: UIViewController, UIPageViewControllerDataSource
 
     private func makeBlank() -> BlankPageViewController {
         let blank = BlankPageViewController()
+        blank.paperColor = doc.notebook.tint.paperUI
         blank.onAdd = { [weak self] in self?.addPageAfterCurrent() }
         return blank
     }
@@ -325,10 +326,11 @@ final class FlipViewController: UIViewController, UIPageViewControllerDataSource
 /// Açık defterin sağında, son sayfadan sonra duran boş yaprak. Dokununca yeni sayfa olur.
 final class BlankPageViewController: UIViewController {
     var onAdd: (() -> Void)?
+    var paperColor = Theme.paperUI
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = Theme.paperUI
+        view.backgroundColor = paperColor
 
         let muted = UIColor(hex: 0x6B655A)
         let icon = UIImageView(image: UIImage(systemName: "plus", withConfiguration: UIImage.SymbolConfiguration(pointSize: 26, weight: .light)))

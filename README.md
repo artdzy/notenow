@@ -45,7 +45,8 @@ Note apps on the App Store are either paid or crowded with tools. NoteNow is the
 | **Real page turns** | Pages are a `UIPageViewController` with the `pageCurl` style: grab the edge with a finger and the sheet curls over like paper. The ‹ › buttons turn it too, and **+** on the last page starts a new one. |
 | **Notepad or open book** | Pages are always portrait. Hold the iPad upright for a single page, like a notepad; turn it sideways and the notebook opens into a two-page spread, curling a whole leaf at a time. |
 | **Paste, then write** | Paste a screenshot, pick from Photos or drag an image in from another app. Move it with one finger, pinch to resize, twist to rotate (it snaps to straight angles), or pull a corner handle. A small menu brings it to front, copies or deletes it. Ink always sits on top, so you can circle and annotate right away. |
-| **Four papers** | Ruled, grid, dotted or blank, per page. |
+| **Four papers, five colours** | Ruled, grid, dotted or blank, per page, on cream, white, yellow, grey or green paper chosen when the notebook is created. |
+| **Search your handwriting** | Type in the library's search field to find a word you wrote by hand, or text inside a pasted screenshot. The recognised text is never shown on the page; it only powers search. |
 | **Library** | Cloth-bound covers in six colours. Long-press to rename, recolour or delete. |
 | **Pages sheet** | Tap the page number for thumbnails of every page: jump, insert, delete, or change the current page's paper. |
 
@@ -67,7 +68,8 @@ The design language is "Kâğıt & Mürekkep" (paper and ink): cream ruled paper
 | Language and UI | Swift, SwiftUI for the library and chrome, UIKit for the page |
 | Ink | PencilKit |
 | Pages | `UIPageViewController` (`.pageCurl`), one `PageViewController` per sheet |
-| Storage | Plain files in the app's Documents folder: `library.json`, `pages.json` per notebook, one `.drawing` (`PKDrawing.dataRepresentation()`) per page, images as JPEG or PNG |
+| Storage | Plain files in the app's Documents folder: `library.json`, `pages.json` and `text.json` per notebook, one `.drawing` (`PKDrawing.dataRepresentation()`) per page, images as JPEG or PNG |
+| Search | Vision `VNRecognizeTextRequest` (Turkish and English) on a rendered copy of each changed page, in the background |
 | Saving | Debounced writes on a background queue, flushed when the app goes to the background |
 | Project | [XcodeGen](https://github.com/yonaskolb/XcodeGen) ([`project.yml`](project.yml)) |
 | Dependencies | none |
@@ -111,7 +113,7 @@ The website is plain HTML and CSS: open `site/index.html`, or serve the folder w
 
 ## Privacy you can verify
 
-NoteNow has no account, no analytics, no ads and no crash-reporting SDK, and it never opens a network connection. Notes stay in the app's folder on the iPad and are included in the device's own iCloud backup if that is on. Photos come through the system picker, so the app only sees the photo you choose; the pasteboard is read only when you tap "Paste".
+NoteNow has no account, no analytics, no ads and no crash-reporting SDK, and it never opens a network connection. Handwriting search uses Apple's on-device Vision text recognition; the recognised text is stored next to the notebook as `text.json`. Notes stay in the app's folder on the iPad and are included in the device's own iCloud backup if that is on. Photos come through the system picker, so the app only sees the photo you choose; the pasteboard is read only when you tap "Paste".
 
 Check it yourself:
 
