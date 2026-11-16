@@ -18,7 +18,13 @@ struct LibraryView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 40) {
                     header
-                    if !query.trimmingCharacters(in: .whitespaces).isEmpty {
+                    if !store.ready {
+                        HStack(spacing: 10) {
+                            ProgressView()
+                            Text("Defterler açılıyor…").foregroundStyle(Theme.muted)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    } else if !query.trimmingCharacters(in: .whitespaces).isEmpty {
                         results
                     } else {
                     LazyVGrid(columns: columns, alignment: .leading, spacing: 40) {
@@ -72,6 +78,12 @@ struct LibraryView: View {
                 Text("Defterlerim")
                     .font(Theme.serif(50))
                     .foregroundStyle(Theme.text)
+                if store.ready {
+                    Label(store.isCloud ? "iCloud ile tüm cihazlarında" : "Yalnızca bu iPad'de · iCloud kapalı",
+                          systemImage: store.isCloud ? "icloud" : "ipad")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.muted)
+                }
             }
             Spacer()
             searchField

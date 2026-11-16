@@ -39,7 +39,7 @@ final class SearchIndex {
     func index(for folder: URL) -> [String: PageText] {
         lock.lock(); defer { lock.unlock() }
         if let c = cache[folder] { return c }
-        let loaded = (try? Data(contentsOf: indexURL(folder))).flatMap { try? JSONDecoder().decode([String: PageText].self, from: $0) } ?? [:]
+        let loaded = FileIO.read(indexURL(folder)).flatMap { try? JSONDecoder().decode([String: PageText].self, from: $0) } ?? [:]
         cache[folder] = loaded
         return loaded
     }
@@ -64,7 +64,7 @@ final class SearchIndex {
     }
 
     private func reindex(_ folder: URL) {
-        guard let data = try? Data(contentsOf: folder.appendingPathComponent("pages.json")),
+        guard let data = FileIO.read(folder.appendingPathComponent("pages.json")),
               let pages = try? JSONDecoder().decode([PageMeta].self, from: data) else { return }
         var idx = index(for: folder)
         var changed = false
@@ -86,7 +86,7 @@ final class SearchIndex {
         cache[folder] = idx
         lock.unlock()
         if let out = try? JSONEncoder().encode(idx) {
-            try? out.write(to: indexURL(folder), options: .atomic)
+            FileIO.write(out, to: indexURL(folder))
         }
         DispatchQueue.main.async { NotificationCenter.default.post(name: Self.didChange, object: nil) }
     }
@@ -101,7 +101,7 @@ final class SearchIndex {
     private func recognize(_ folder: URL, _ page: PageMeta) -> (String, String) {
         let size = PageOrientation.portrait.size
         let url = folder.appendingPathComponent("\(page.id.uuidString).drawing")
-        var drawing = (try? Data(contentsOf: url)).flatMap { try? PKDrawing(data: $0) } ?? PKDrawing()
+        var drawing = FileIO.read(url).flatMap { try? PKDrawing(data: $0) } ?? PKDrawing()
         // Fosforlu kalem lekeleri harfleri bozmasın.
         drawing = PKDrawing(strokes: drawing.strokes.filter { $0.ink.inkType != .marker })
         if drawing.strokes.isEmpty && page.images.isEmpty { return ("", "") }
@@ -118,7 +118,7 @@ final class SearchIndex {
             UIColor.white.setFill()
             ctx.fill(CGRect(origin: .zero, size: size))
             for item in page.images {
-                guard let img = UIImage(contentsOfFile: folder.appendingPathComponent("images").appendingPathComponent(item.fileName).path) else { continue }
+                guard let img = FileIO.read(folder.appendingPathComponent("images").appendingPathComponent(item.fileName)).flatMap(UIImage.init(data:)) else { continue }
                 ctx.saveGState()
                 ctx.translateBy(x: item.center.x, y: item.center.y)
                 ctx.rotate(by: item.rotation)
@@ -180,7 +180,7 @@ final class SearchIndex {
                 hits.append(SearchHit(notebook: nb, pageIndex: nil, before: "", match: nb.title, after: ""))
             }
             let dir = folder(nb.id)
-            guard let data = try? Data(contentsOf: dir.appendingPathComponent("pages.json")),
+            guard let data = FileIO.read(dir.appendingPathComponent("pages.json")),
                   let pages = try? JSONDecoder().decode([PageMeta].self, from: data) else { continue }
             let idx = index(for: dir)
             for (i, page) in pages.enumerated() {

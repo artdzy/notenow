@@ -48,6 +48,7 @@ Note apps on the App Store are either paid or crowded with tools. NoteNow is the
 | **Four papers, five colours** | Ruled, grid, dotted or blank, per page, on cream, white, yellow, grey or green paper chosen when the notebook is created. |
 | **Search your handwriting** | Type in the library's search field to find a word you wrote by hand, or text inside a pasted screenshot. The recognised text is never shown on the page; it only powers search. |
 | **Library** | Cloth-bound covers in six colours. Long-press to rename, recolour or delete. |
+| **On all your devices** | With iCloud Drive on, notebooks sync through your own iCloud account to every iPad and Mac signed in with the same Apple Account. |
 | **Pages sheet** | Tap the page number for thumbnails of every page: jump, insert, delete, or change the current page's paper. |
 
 The design language is "Kâğıt & Mürekkep" (paper and ink): cream ruled paper `#FBF8F1` on a warm desk `#E9E5DC`, navy ink `#1F2A44`, serif titles. The tokens live in [`NoteNow/Design/Theme.swift`](NoteNow/Design/Theme.swift) and [`site/assets/notenow.css`](site/assets/notenow.css).
@@ -71,6 +72,7 @@ The design language is "Kâğıt & Mürekkep" (paper and ink): cream ruled paper
 | Storage | Plain files in the app's Documents folder: `library.json`, `pages.json` and `text.json` per notebook, one `.drawing` (`PKDrawing.dataRepresentation()`) per page, images as JPEG or PNG |
 | Search | Vision `VNRecognizeTextRequest` (Turkish and English) on a rendered copy of each changed page, in the background |
 | Saving | Debounced writes on a background queue, flushed when the app goes to the background |
+| Sync | iCloud Drive ubiquity container (`iCloud.com.artunduzay.notenow`), `NSFileCoordinator` for every read and write, `NSMetadataQuery` to pull changes from other devices; one `notebook.json` per notebook so two devices never overwrite each other's library |
 | Project | [XcodeGen](https://github.com/yonaskolb/XcodeGen) ([`project.yml`](project.yml)) |
 | Dependencies | none |
 
@@ -113,7 +115,7 @@ The website is plain HTML and CSS: open `site/index.html`, or serve the folder w
 
 ## Privacy you can verify
 
-NoteNow has no account, no analytics, no ads and no crash-reporting SDK, and it never opens a network connection. Handwriting search uses Apple's on-device Vision text recognition; the recognised text is stored next to the notebook as `text.json`. Notes stay in the app's folder on the iPad and are included in the device's own iCloud backup if that is on. Photos come through the system picker, so the app only sees the photo you choose; the pasteboard is read only when you tap "Paste".
+NoteNow has no account, no analytics, no ads and no crash-reporting SDK, and the app itself never opens a network connection. Handwriting search uses Apple's on-device Vision text recognition; the recognised text is stored next to the notebook as `text.json`. If iCloud Drive is on, notebooks live in the app's private folder in the user's own iCloud Drive and Apple syncs them to their other iPads and Macs; otherwise they stay in the app's folder on the iPad. There is no NoteNow server. Photos come through the system picker, so the app only sees the photo you choose; the pasteboard is read only when you tap "Paste".
 
 Check it yourself:
 

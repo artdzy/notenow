@@ -7,14 +7,23 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.2.0"
-    CURRENT_PROJECT_VERSION: "5"
+    MARKETING_VERSION: "0.3.0"
+    CURRENT_PROJECT_VERSION: "6"
 targets:
   NoteNow:
     type: application
     platform: iOS
     sources:
       - NoteNow
+    entitlements:
+      path: NoteNow/NoteNow.entitlements
+      properties:
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.artunduzay.notenow
+        com.apple.developer.ubiquity-container-identifiers:
+          - iCloud.com.artunduzay.notenow
+        com.apple.developer.icloud-services:
+          - CloudDocuments
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.artunduzay.notenow

@@ -24,8 +24,8 @@ final class NotebookDocument: ObservableObject {
         self.notebook = notebook
         self.store = store
         self.folder = store.folder(for: notebook.id)
-        try? FileManager.default.createDirectory(at: imagesFolder, withIntermediateDirectories: true)
-        if let data = try? Data(contentsOf: pagesURL),
+        FileIO.makeFolder(imagesFolder)
+        if let data = FileIO.read(pagesURL),
            let list = try? JSONDecoder().decode([PageMeta].self, from: data) {
             pages = list
         }
@@ -46,8 +46,8 @@ final class NotebookDocument: ObservableObject {
         for i in pages.indices {
             let id = pages[i].id
             let url = drawingURL(id)
-            if let data = try? Data(contentsOf: url), let d = try? PKDrawing(data: data), !d.strokes.isEmpty {
-                try? d.transformed(using: t).dataRepresentation().write(to: url, options: .atomic)
+            if let data = FileIO.read(url), let d = try? PKDrawing(data: data), !d.strokes.isEmpty {
+                FileIO.write(d.transformed(using: t).dataRepresentation(), to: url)
             }
             pages[i].images = pages[i].images.map { item in
                 var item = item
@@ -59,7 +59,7 @@ final class NotebookDocument: ObservableObject {
         drawingCache.removeAll()
         notebook.orientation = .portrait
         if let data = try? JSONEncoder().encode(pages) {
-            try? data.write(to: pagesURL, options: .atomic)
+            FileIO.write(data, to: pagesURL)
         }
         store?.update(notebook)
     }
@@ -72,7 +72,7 @@ final class NotebookDocument: ObservableObject {
     func drawing(for id: UUID) -> PKDrawing {
         if let d = drawingCache[id] { return d }
         var d = PKDrawing()
-        if let data = try? Data(contentsOf: drawingURL(id)), let loaded = try? PKDrawing(data: data) {
+        if let data = FileIO.read(drawingURL(id)), let loaded = try? PKDrawing(data: data) {
             d = loaded
         }
         drawingCache[id] = d
@@ -86,7 +86,7 @@ final class NotebookDocument: ObservableObject {
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }
             let data = d.dataRepresentation()
-            self.io.async { try? data.write(to: url, options: .atomic) }
+            self.io.async { FileIO.write(data, to: url) }
             self.pendingSaves[id] = nil
             self.touch()
         }
@@ -113,7 +113,7 @@ final class NotebookDocument: ObservableObject {
         let url = pagesURL
         io.async {
             if let data = try? JSONEncoder().encode(snapshot) {
-                try? data.write(to: url, options: .atomic)
+                FileIO.write(data, to: url)
             }
         }
         touch()
@@ -150,8 +150,8 @@ final class NotebookDocument: ObservableObject {
         let drawing = drawingURL(page.id)
         let files = page.images.map { imagesFolder.appendingPathComponent($0.fileName) }
         io.async {
-            try? FileManager.default.removeItem(at: drawing)
-            files.forEach { try? FileManager.default.removeItem(at: $0) }
+            FileIO.remove(drawing)
+            files.forEach { FileIO.remove($0) }
         }
         savePages()
     }
@@ -173,7 +173,7 @@ final class NotebookDocument: ObservableObject {
 
     func image(_ fileName: String) -> UIImage? {
         if let img = imageCache.object(forKey: fileName as NSString) { return img }
-        guard let img = UIImage(contentsOfFile: imagesFolder.appendingPathComponent(fileName).path) else { return nil }
+        guard let img = FileIO.read(imagesFolder.appendingPathComponent(fileName)).flatMap(UIImage.init(data:)) else { return nil }
         imageCache.setObject(img, forKey: fileName as NSString)
         return img
     }
@@ -184,7 +184,7 @@ final class NotebookDocument: ObservableObject {
         let name = UUID().uuidString + (alpha ? ".png" : ".jpg")
         guard let data = alpha ? img.pngData() : img.jpegData(compressionQuality: 0.9) else { return nil }
         let url = imagesFolder.appendingPathComponent(name)
-        io.async { try? data.write(to: url, options: .atomic) }
+        io.async { FileIO.write(data, to: url) }
         imageCache.setObject(img, forKey: name as NSString)
 
         let maxW = pageSize.width * 0.45
@@ -212,7 +212,7 @@ final class NotebookDocument: ObservableObject {
         }
         if let removed {
             let url = imagesFolder.appendingPathComponent(removed.fileName)
-            io.async { try? FileManager.default.removeItem(at: url) }
+            io.async { FileIO.remove(url) }
         }
     }
 
