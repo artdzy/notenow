@@ -43,9 +43,9 @@ Note apps on the App Store are either paid or crowded with tools. NoteNow is the
 | --- | --- |
 | **Five pens** | Fountain pen, pencil, felt tip, highlighter and eraser, standing in a tray. The active pen lifts out. Tap it again for three widths and eight colours; the highlighter has its own four. The eraser removes part of a stroke or the whole line. |
 | **Real page turns** | Pages are a `UIPageViewController` with the `pageCurl` style: grab the edge with a finger and the sheet curls over like paper. The ‹ › buttons turn it too, and **+** on the last page starts a new one. |
-| **Notepad or open book** | Hold the iPad upright and a portrait notebook is a single page, like a notepad. Turn it sideways and it opens into a two-page spread, curling a whole leaf at a time. |
+| **Notepad or open book** | Pages are always portrait. Hold the iPad upright for a single page, like a notepad; turn it sideways and the notebook opens into a two-page spread, curling a whole leaf at a time. |
 | **Paste, then write** | Paste a screenshot, pick from Photos or drag an image in from another app. Move it with one finger, pinch to resize, twist to rotate (it snaps to straight angles), or pull a corner handle. A small menu brings it to front, copies or deletes it. Ink always sits on top, so you can circle and annotate right away. |
-| **Four papers** | Ruled, grid, dotted or blank, per page. Notebooks are portrait by default, like a notepad; landscape is one tap away. |
+| **Four papers** | Ruled, grid, dotted or blank, per page. |
 | **Library** | Cloth-bound covers in six colours. Long-press to rename, recolour or delete. |
 | **Pages sheet** | Tap the page number for thumbnails of every page: jump, insert, delete, or change the current page's paper. |
 
@@ -57,7 +57,7 @@ The design language is "Kâğıt & Mürekkep" (paper and ink): cream ruled paper
 - **Low latency.** Ink is native PencilKit (`PKInkingTool` with `.fountainPen`, `.pencil`, `.monoline` and `.marker`), with pressure and tilt.
 - **Double-tap and squeeze.** `UIPencilInteraction` follows the system preference: switch to the eraser, back to the previous pen, or open the pen's colour and width panel. Pencil Pro's squeeze uses the same preference.
 - **Pinch to zoom.** Two fingers zoom up to 5× and pan around the page; one finger turns the page only when the page is at full view.
-- **Crisp at any size.** Each page has a fixed logical size (1000 × 1400 points portrait, 1400 × 1000 landscape) and the canvas uses PencilKit's own zoom, so strokes are rendered natively at every scale and stay put when the iPad rotates.
+- **Crisp at any size.** Each page has a fixed logical size (1000 × 1400 points) and the canvas uses PencilKit's own zoom, so strokes are rendered natively at every scale and stay put when the iPad rotates.
 - **Undo per page.** Every page has its own undo history.
 
 ## Under the hood

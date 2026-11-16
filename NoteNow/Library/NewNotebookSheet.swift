@@ -61,14 +61,6 @@ struct NewNotebookSheet: View {
                     }
                 }
             }
-
-            section("SAYFA YÖNÜ") {
-                Picker("Sayfa yönü", selection: $orientation) {
-                    ForEach(PageOrientation.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 260)
-            }
         }
         .padding(28)
         .background(Theme.paper)

@@ -80,12 +80,6 @@ final class NotebookStore: ObservableObject {
         update(copy)
     }
 
-    func setOrientation(_ nb: Notebook, _ o: PageOrientation) {
-        var copy = nb
-        copy.orientation = o
-        update(copy)
-    }
-
     func delete(_ nb: Notebook) {
         try? FileManager.default.removeItem(at: folder(for: nb.id))
         notebooks.removeAll { $0.id == nb.id }

@@ -87,13 +87,6 @@ struct LibraryView: View {
                 Button(c.title) { store.setCover(nb, c) }
             }
         } label: { Label("Kapak rengi", systemImage: "paintpalette") }
-        Menu {
-            ForEach(PageOrientation.allCases) { o in
-                Button { store.setOrientation(nb, o) } label: {
-                    if nb.orientation == o { Label(o.title, systemImage: "checkmark") } else { Text(o.title) }
-                }
-            }
-        } label: { Label("Sayfa yönü", systemImage: "rectangle.portrait.rotate") }
         Divider()
         Button(role: .destructive) { deleting = nb } label: { Label("Sil", systemImage: "trash") }
     }

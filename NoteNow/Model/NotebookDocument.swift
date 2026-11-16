@@ -15,7 +15,7 @@ final class NotebookDocument: ObservableObject {
     private var pendingSaves: [UUID: DispatchWorkItem] = [:]
     private let io = DispatchQueue(label: "notenow.io", qos: .utility)
 
-    var pageSize: CGSize { notebook.orientation.size }
+    var pageSize: CGSize { PageOrientation.portrait.size }
     private var pagesURL: URL { folder.appendingPathComponent("pages.json") }
     private var imagesFolder: URL { folder.appendingPathComponent("images", isDirectory: true) }
     private func drawingURL(_ id: UUID) -> URL { folder.appendingPathComponent("\(id.uuidString).drawing") }
@@ -33,6 +33,35 @@ final class NotebookDocument: ObservableObject {
             pages = [PageMeta(id: UUID(), paper: notebook.paper, images: [])]
             savePages()
         }
+        if notebook.orientation == .landscape { migrateToPortrait() }
+    }
+
+    /// Sayfalar artık hep dikey (bloknot). Eski yatay defterlerin mürekkebi ve görselleri
+    /// dikey sayfanın genişliğine sığacak şekilde küçültülür; hiçbir şey kırpılmaz.
+    private func migrateToPortrait() {
+        let from = PageOrientation.landscape.size
+        let to = PageOrientation.portrait.size
+        let k = to.width / from.width
+        let t = CGAffineTransform(scaleX: k, y: k)
+        for i in pages.indices {
+            let id = pages[i].id
+            let url = drawingURL(id)
+            if let data = try? Data(contentsOf: url), let d = try? PKDrawing(data: data), !d.strokes.isEmpty {
+                try? d.transformed(using: t).dataRepresentation().write(to: url, options: .atomic)
+            }
+            pages[i].images = pages[i].images.map { item in
+                var item = item
+                item.center = CGPoint(x: item.center.x * k, y: item.center.y * k)
+                item.size = CGSize(width: item.size.width * k, height: item.size.height * k)
+                return item
+            }
+        }
+        drawingCache.removeAll()
+        notebook.orientation = .portrait
+        if let data = try? JSONEncoder().encode(pages) {
+            try? data.write(to: pagesURL, options: .atomic)
+        }
+        store?.update(notebook)
     }
 
     func page(id: UUID) -> PageMeta? { pages.first { $0.id == id } }

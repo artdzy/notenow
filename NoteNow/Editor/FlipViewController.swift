@@ -85,9 +85,9 @@ final class FlipViewController: UIViewController, UIPageViewControllerDataSource
         model.flipper = self
     }
 
-    /// Dikey defter + yatay ekran = açık defter.
+    /// Yatay ekran = açık defter (iki dikey sayfa).
     private func wantsSpread(for size: CGSize) -> Bool {
-        doc.notebook.orientation == .portrait && size.width > size.height * 1.05
+        size.width > size.height * 1.05
     }
 
     /// Sayfa çevirici kurulur; açık defter ile tek sayfa arasında geçerken yeniden kurulur.
